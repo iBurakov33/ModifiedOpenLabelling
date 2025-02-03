@@ -1,4 +1,2 @@
-closed_door
-opened_door
-bus
-number
+Человек Упал
+Человек Стоит

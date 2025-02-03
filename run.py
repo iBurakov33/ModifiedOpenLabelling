@@ -2,6 +2,7 @@ import argparse
 import textwrap
 import glob
 import os
+from natsort import natsorted
 
 import numpy as np
 import cv2
@@ -13,7 +14,6 @@ if os.path.isdir(bin_bbox_path) == False:
     os.makedirs(bin_bbox_path)
 if os.path.isdir(bin_images_path) == False:
     os.makedirs(bin_images_path)
-
 
 WITH_QT = True
 try:
@@ -48,6 +48,7 @@ mouse_y = 0
 point_1 = (-1, -1)
 point_2 = (-1, -1)
 
+
 def change_img_index(x):
     global img_index, img
     img_index = x
@@ -55,21 +56,23 @@ def change_img_index(x):
     img = cv2.imread(img_path)
     if WITH_QT:
         cv2.displayOverlay(WINDOW_NAME, "Showing image "
-                                    "" + str(img_index) + "/"
-                                    "" + str(last_img_index), 1000)
+                                        "" + str(img_index) + "/"
+                                                              "" + str(last_img_index), 1000)
     else:
         print("Showing image "
-                "" + str(img_index) + "/"
-                "" + str(last_img_index) + " path:" + img_path)
+              "" + str(img_index) + "/"
+                                    "" + str(last_img_index) + " path:" + img_path)
+
 
 def change_class_index(x):
     global class_index
     class_index = x
     if WITH_QT:
         cv2.displayOverlay(WINDOW_NAME, "Selected class "
-                                "" + str(class_index) + "/"
-                                "" + str(last_class_index) + ""
-                                "\n " + class_list[class_index],3000)
+                                        "" + str(class_index) + "/"
+                                                                "" + str(last_class_index) + ""
+                                                                                             "\n " + class_list[
+                               class_index], 3000)
     else:
         print("Selected class :" + class_list[class_index])
 
@@ -80,7 +83,7 @@ def draw_edges(tmp_img):
     edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
     # Overlap image and edges together
     tmp_img = np.bitwise_or(tmp_img, edges)
-    #tmp_img = cv2.addWeighted(tmp_img, 1 - edges_val, edges, edges_val, 0)
+    # tmp_img = cv2.addWeighted(tmp_img, 1 - edges_val, edges, edges_val, 0)
     return tmp_img
 
 
@@ -111,7 +114,7 @@ def yolo_format(class_index, point_1, point_2, width, height):
     x_width = float(abs(point_2[0] - point_1[0])) / width
     y_height = float(abs(point_2[1] - point_1[1])) / height
     return str(class_index) + " " + str(x_center) \
-       + " " + str(y_center) + " " + str(x_width) + " " + str(y_height)
+        + " " + str(y_center) + " " + str(x_width) + " " + str(y_height)
 
 
 def voc_format(class_index, point_1, point_2):
@@ -131,7 +134,7 @@ def get_txt_path(img_path):
 
 def save_bb(txt_path, line):
     with open(txt_path, 'a') as myfile:
-        myfile.write(line + "\n") # append line
+        myfile.write(line + "\n")  # append line
 
 
 def delete_bb(txt_path, line_index):
@@ -161,6 +164,7 @@ def draw_text(tmp_img, text, center, color, size):
     cv2.putText(tmp_img, text, center, font, 0.7, color, size, cv2.FONT_HERSHEY_COMPLEX_SMALL)
     return tmp_img
 
+
 def draw_bboxes_from_file(tmp_img, txt_path, width, height):
     global img_objects
     img_objects = []
@@ -187,7 +191,7 @@ def draw_bboxes_from_file(tmp_img, txt_path, width, height):
                              "seem to be in a different format. Consider "
                              "removing your old label files.")
                     raise Exception(textwrap.fill(error, 70))
-                x1, y1, x2, y2 = x1-1, y1-1, x2-1, y2-1
+                x1, y1, x2, y2 = x1 - 1, y1 - 1, x2 - 1, y2 - 1
             img_objects.append([class_index, x1, y1, x2, y2])
             color = class_rgb[class_index].tolist()
             cv2.rectangle(tmp_img, (x1, y1), (x2, y2), color, thickness=args.bbox_thickness)
@@ -198,7 +202,7 @@ def draw_bboxes_from_file(tmp_img, txt_path, width, height):
 def get_bbox_area(x1, y1, x2, y2):
     width = abs(x2 - x1)
     height = abs(y2 - y1)
-    return width*height
+    return width * height
 
 
 def set_selected_bbox():
@@ -224,6 +228,7 @@ def mouse_inside_delete_button():
                 return True
     return False
 
+
 def delete_selected_bbox():
     img_path = image_list[img_index]
     txt_path = get_txt_path(img_path)
@@ -239,6 +244,7 @@ def delete_selected_bbox():
                 new_file.write(line)
             counter += 1
 
+
 # mouse callback function
 def mouse_listener(event, x, y, flags, param):
     global is_bbox_selected, prev_was_double_click, mouse_x, mouse_y, point_1, point_2
@@ -248,7 +254,7 @@ def mouse_listener(event, x, y, flags, param):
         mouse_y = y
     elif event == cv2.EVENT_LBUTTONDBLCLK:
         prev_was_double_click = True
-        #print("Double click")
+        # print("Double click")
         point_1 = (-1, -1)
         # if clicked inside a bounding box
         set_selected_bbox()
@@ -259,15 +265,15 @@ def mouse_listener(event, x, y, flags, param):
             delete_selected_bbox()
     elif event == cv2.EVENT_LBUTTONDOWN:
         if prev_was_double_click:
-            #print("Finish double click")
+            # print("Finish double click")
             prev_was_double_click = False
 
-        #print("Normal left click")
+        # print("Normal left click")
         is_mouse_inside_delete_button = mouse_inside_delete_button()
         if point_1[0] == -1:
             if is_bbox_selected and is_mouse_inside_delete_button:
                 # the user wants to delete the bbox
-                #print("Delete bbox")
+                # print("Delete bbox")
                 delete_selected_bbox()
             else:
                 is_bbox_selected = False
@@ -275,7 +281,7 @@ def mouse_listener(event, x, y, flags, param):
                 point_1 = (x, y)
         else:
             # minimal size for bounding box to avoid errors
-            #!!!!!!!!!!!!!!!!!!!!
+            # !!!!!!!!!!!!!!!!!!!!
             threshold = 5
             if abs(x - point_1[0]) > threshold or abs(y - point_1[1]) > threshold:
                 # second click
@@ -296,7 +302,7 @@ def get_close_icon(x1, y1, x2, y2):
 
 
 def draw_close_icon(tmp_img, x1_c, y1_c, x2_c, y2_c):
-    red = (0,0,255)
+    red = (0, 0, 255)
     cv2.rectangle(tmp_img, (x1_c + 1, y1_c - 1), (x2_c, y2_c), red, -1)
     white = (255, 255, 255)
     cv2.line(tmp_img, (x1_c, y1_c), (x2_c, y2_c), white, 2)
@@ -312,12 +318,13 @@ def draw_info_bb_selected(tmp_img):
             draw_close_icon(tmp_img, x1_c, y1_c, x2_c, y2_c)
     return tmp_img
 
+
 def remove_bad_data(img_path, img_path_txt):
     img_name = img_path.split('/')[-1]
     txt_name = img_path_txt.split('/')[-1]
 
-    os.rename(img_path,os.path.join('bin/images', img_name))
-    os.rename(img_path_txt,os.path.join('bin/bbox_txt', txt_name))
+    os.rename(img_path, os.path.join('bin/images', img_name))
+    os.rename(img_path_txt, os.path.join('bin/bbox_txt', txt_name))
 
 
 # load all images (with multiple extensions) from a directory using OpenCV
@@ -329,13 +336,13 @@ for f in os.listdir(img_dir):
     if test_img is not None:
         image_list.append(f_path)
 
-#print(image_list)
+# print(os.listdir(img_dir))
 
-#SORT OR NOT?
-#image_list.sort()
-#if not args.sort:
-    #np.random.seed(123)  # Keep random img order consistent
-    #np.random.shuffle(image_list)
+# SORT OR NOT?
+image_list = natsorted(image_list)
+# if not args.sort:
+# np.random.seed(123)  # Keep random img order consistent
+# np.random.shuffle(image_list)
 
 last_img_index = len(image_list) - 1
 print(image_list)
@@ -347,12 +354,12 @@ if not os.path.exists(bb_dir):
 for img_path in image_list:
     txt_path = get_txt_path(img_path)
     if not os.path.isfile(txt_path):
-         open(txt_path, 'a').close()
+        open(txt_path, 'a').close()
 
 # load class list
 with open('class_list.txt') as f:
     class_list = f.read().splitlines()
-#print(class_list)
+# print(class_list)
 last_class_index = len(class_list) - 1
 
 # Make the class colors the same each session
@@ -365,14 +372,14 @@ class_rgb = np.array(class_rgb)
 # If there are still more classes, add new colors randomly
 num_colors_missing = len(class_list) - len(class_rgb)
 if num_colors_missing > 0:
-    more_colors = np.random.randint(0, 255+1, size=(num_colors_missing, 3))
+    more_colors = np.random.randint(0, 255 + 1, size=(num_colors_missing, 3))
     class_rgb = np.vstack([class_rgb, more_colors])
 
 # create window
 WINDOW_NAME = 'Bounding Box Labeler'
 cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_KEEPRATIO)
-#cv2.resizeWindow(WINDOW_NAME, 1000, 700)
-cv2.resizeWindow(WINDOW_NAME,500, 500)
+# cv2.resizeWindow(WINDOW_NAME, 1000, 700)
+cv2.resizeWindow(WINDOW_NAME, 500, 500)
 cv2.setMouseCallback(WINDOW_NAME, mouse_listener)
 
 # selected image
@@ -382,7 +389,7 @@ cv2.createTrackbar(TRACKBAR_IMG, WINDOW_NAME, 0, last_img_index, change_img_inde
 # selected class
 TRACKBAR_CLASS = 'Class'
 if last_class_index != 0:
-  cv2.createTrackbar(TRACKBAR_CLASS, WINDOW_NAME, 0, last_class_index, change_class_index)
+    cv2.createTrackbar(TRACKBAR_CLASS, WINDOW_NAME, 0, last_class_index, change_class_index)
 
 # initialize
 change_img_index(0)
@@ -402,10 +409,8 @@ while True:
         # draw edges
         tmp_img = draw_edges(tmp_img)
 
-
-    #print('MOUSE',mouse_x, mouse_y)
-    #print('POINTS', point_1, point_2)
-
+    # print('MOUSE',mouse_x, mouse_y)
+    # print('POINTS', point_1, point_2)
 
     img_path = image_list[img_index]
     txt_path = get_txt_path(img_path)
@@ -434,7 +439,8 @@ while True:
         else:
             if WITH_QT:
                 cv2.displayOverlay(WINDOW_NAME, "Selected label: " + class_list[class_index] + ""
-                                    "\nPress [w] or [s] to change.", 120)
+                                                                                               "\nPress [w] or [s] to change.",
+                                   120)
 
     cv2.imshow(WINDOW_NAME, tmp_img)
     pressed_key = cv2.waitKey(50)
@@ -460,17 +466,14 @@ while True:
         draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
         cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
 
-    #REMOVING BAD DATA
+    # REMOVING BAD DATA
     elif pressed_key == ord('r'):
 
-        bad_path=img_path
-        bad_text=txt_path
-
+        bad_path = img_path
+        bad_text = txt_path
 
         img_index = increase_index(img_index, last_img_index)
         cv2.setTrackbarPos(TRACKBAR_IMG, WINDOW_NAME, img_index)
-
-
 
         if img_index == 0:
             del image_list[last_img_index]
@@ -482,7 +485,7 @@ while True:
 
         else:
             del image_list[img_index - 1]
-            last_img_index = len(image_list)-1
+            last_img_index = len(image_list) - 1
 
             remove_bad_data(bad_path, bad_text)
 
@@ -491,11 +494,11 @@ while True:
         cv2.setTrackbarPos(TRACKBAR_IMG, WINDOW_NAME, img_index)
 
 
-    #Num class-switchin'
+    # Num class-switchin'
     elif pressed_key == ord('1'):
 
-        if len(class_list)>=1:
-            class_index=0
+        if len(class_list) >= 1:
+            class_index = 0
             color = class_rgb[class_index].tolist()
             draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
@@ -503,7 +506,7 @@ while True:
     elif pressed_key == ord('2'):
 
         if len(class_list) >= 2:
-            class_index=1
+            class_index = 1
             color = class_rgb[class_index].tolist()
             draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
@@ -511,49 +514,49 @@ while True:
     elif pressed_key == ord('3'):
 
         if len(class_list) >= 3:
-            class_index=2
+            class_index = 2
             color = class_rgb[class_index].tolist()
             draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
 
     elif pressed_key == ord('4'):
         if len(class_list) >= 4:
-            class_index=3
+            class_index = 3
             color = class_rgb[class_index].tolist()
             draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
 
     elif pressed_key == ord('5'):
         if len(class_list) >= 5:
-            class_index=4
+            class_index = 4
             color = class_rgb[class_index].tolist()
             draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
 
     elif pressed_key == ord('6'):
         if len(class_list) >= 6:
-            class_index=5
+            class_index = 5
             color = class_rgb[class_index].tolist()
             draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
 
     elif pressed_key == ord('7'):
         if len(class_list) >= 7:
-            class_index=6
+            class_index = 6
             color = class_rgb[class_index].tolist()
             draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
 
     elif pressed_key == ord('8'):
         if len(class_list) >= 8:
-            class_index=7
+            class_index = 7
             color = class_rgb[class_index].tolist()
             draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
 
     elif pressed_key == ord('9'):
         if len(class_list) >= 9:
-            class_index=8
+            class_index = 8
             color = class_rgb[class_index].tolist()
             draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
@@ -564,16 +567,16 @@ while True:
     elif pressed_key == ord('h'):
         if WITH_QT:
             cv2.displayOverlay(WINDOW_NAME, "[e] to show edges;\n"
-                                "[q] to quit;\n"
-                                "[a] or [d] to change Image;\n"
-                                "[w] or [s] to change Class.\n"
-                                "%s" % img_path, 6000)
+                                            "[q] to quit;\n"
+                                            "[a] or [d] to change Image;\n"
+                                            "[w] or [s] to change Class.\n"
+                                            "%s" % img_path, 6000)
         else:
             print("[e] to show edges;\n"
-                    "[q] to quit;\n"
-                    "[a] or [d] to change Image;\n"
-                    "[w] or [s] to change Class.\n"
-                    "%s" % img_path)
+                  "[q] to quit;\n"
+                  "[a] or [d] to change Image;\n"
+                  "[w] or [s] to change Class.\n"
+                  "%s" % img_path)
     # show edges key listener
     elif pressed_key == ord('e'):
         if edges_on == True:
@@ -588,7 +591,7 @@ while True:
                 cv2.displayOverlay(WINDOW_NAME, "Edges turned ON!", 1000)
             else:
                 print("Edges turned ON!")
-            
+
     # quit key listener
     elif pressed_key == ord('q'):
         break
@@ -596,7 +599,7 @@ while True:
 
     if WITH_QT:
         # if window gets closed then quit
-        if cv2.getWindowProperty(WINDOW_NAME,cv2.WND_PROP_VISIBLE) < 1:
+        if cv2.getWindowProperty(WINDOW_NAME, cv2.WND_PROP_VISIBLE) < 1:
             break
 
 cv2.destroyAllWindows()
