@@ -36,7 +36,7 @@ class_index = 0
 img_index = 0
 img = None
 img_objects = []
-bb_dir = "bbox_txt/"
+bb_dir = "new_bbox_txt/"
 
 # selected bounding box
 prev_was_double_click = False
@@ -129,7 +129,7 @@ def voc_format(class_index, point_1, point_2):
 def get_txt_path(img_path):
     img_name = os.path.basename(os.path.normpath(img_path))
     img_type = img_path.split('.')[-1]
-    return bb_dir + img_name.replace(img_type, 'txt')
+    return bb_dir + img_name[::-1].replace(img_type[::-1], 'txt'[::-1], 1)[::-1]
 
 
 def save_bb(txt_path, line):
