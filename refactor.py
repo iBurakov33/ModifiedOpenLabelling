@@ -1,6 +1,6 @@
 import os
 
-bb_dir = "new_bbox_txt/"
+bb_dir = "test/"
 
 
 if __name__ == "__main__":
@@ -10,8 +10,8 @@ if __name__ == "__main__":
             with open(bb_dir + f, "r+") as f:
                 elems = f.readline().split()
                 while elems:
-                    if elems and (len(elems) % 5 != 0 or elems[0] != "0"):
+                    if elems and len(elems) != 5:
                         f.truncate(0)
                         c += 1
-                    line = f.readline()
+                    elems = f.readline().split()
     print(c)
