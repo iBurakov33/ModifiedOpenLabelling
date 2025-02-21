@@ -1,6 +1,6 @@
 import os
 
-bb_dir = "test/"
+bb_dir = "new_bbox_txt/"
 
 
 if __name__ == "__main__":
