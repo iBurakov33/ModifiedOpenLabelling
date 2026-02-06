@@ -1,13 +1,13 @@
 import argparse
 import textwrap
-import glob
+from pathlib import Path
 import os
 from natsort import natsorted
 
 import numpy as np
 import cv2
 
-bin_bbox_path = 'bin/bbox_txt'
+bin_bbox_path = 'bin/labels'
 bin_images_path = 'bin/images'
 
 if os.path.isdir(bin_bbox_path) == False:
@@ -36,7 +36,7 @@ class_index = 0
 img_index = 0
 img = None
 img_objects = []
-bb_dir = "new_bbox_txt/"
+bb_dir = "labels/"
 
 # selected bounding box
 prev_was_double_click = False
@@ -127,9 +127,10 @@ def voc_format(class_index, point_1, point_2):
 
 
 def get_txt_path(img_path):
-    img_name = os.path.basename(os.path.normpath(img_path))
-    img_type = img_path.split('.')[-1]
-    return bb_dir + img_name[::-1].replace(img_type[::-1], 'txt'[::-1], 1)[::-1]
+    #img_name = os.path.basename(os.path.normpath(img_path))
+    #img_type = img_path.split('.')[-1]
+    #return bb_dir + img_name[::-1].replace(img_type[::-1], 'txt'[::-1], 1)[::-1]
+    return str(Path(img_path).with_suffix('.txt')).replace(img_dir, bb_dir)
 
 
 def save_bb(txt_path, line):
@@ -324,19 +325,18 @@ def remove_bad_data(img_path, img_path_txt):
     txt_name = img_path_txt.split('/')[-1]
 
     os.rename(img_path, os.path.join('bin/images', img_name))
-    os.rename(img_path_txt, os.path.join('bin/bbox_txt', txt_name))
+    os.rename(img_path_txt, os.path.join('bin/labels', txt_name))
 
 
 # load all images (with multiple extensions) from a directory using OpenCV
 img_dir = "images/"
 image_list = []
-for f in os.listdir(img_dir):
-    f_path = os.path.join(img_dir, f)
-    test_img = cv2.imread(f_path)
-    if test_img is not None:
-        image_list.append(f_path)
-
-# print(os.listdir(img_dir))
+for (dirpath, folder_names, files) in os.walk(img_dir):
+    for filename in files:
+        f_path = os.path.join(dirpath, filename)
+        test_img = cv2.imread(f_path)
+        if test_img is not None:
+            image_list.append(f_path)
 
 # SORT OR NOT?
 image_list = natsorted(image_list)
