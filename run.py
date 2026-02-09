@@ -36,7 +36,7 @@ class_index = 0
 img_index = 0
 img = None
 img_objects = []
-bb_dir = "labels/"
+bb_dir = "labels"
 
 # selected bounding box
 prev_was_double_click = False
@@ -329,7 +329,7 @@ def remove_bad_data(img_path, img_path_txt):
 
 
 # load all images (with multiple extensions) from a directory using OpenCV
-img_dir = "images/"
+img_dir = "images"
 image_list = []
 for (dirpath, folder_names, files) in os.walk(img_dir):
     for filename in files:

@@ -1,2 +1,6 @@
-Fallen
-Standing
+Person
+Bike
+Car
+Small Animal
+Large Animal
+Bird
