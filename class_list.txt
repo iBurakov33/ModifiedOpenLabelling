@@ -1,12 +1,2 @@
+Abandoned object
 Person
-Bike
-Car
-Small Animal
-Large Animal
-Bird
-Bus
-Truck
-Micro‑vessel
-Small vessel
-Medium-size vessel
-Large vessel  
