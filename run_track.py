@@ -364,6 +364,9 @@ if not os.path.exists(bb_dir):
 # create empty .txt file for each of the images if it doesn't exist already
 for img_path in image_list:
     txt_path = get_txt_path(img_path)
+    dir_path = os.path.dirname(txt_path)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
     if not os.path.isfile(txt_path):
         open(txt_path, 'a').close()
 
