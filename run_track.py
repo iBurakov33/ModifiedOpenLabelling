@@ -7,6 +7,8 @@ from natsort import natsorted
 import numpy as np
 import cv2
 
+from range_labeler import RangeLabeler, create_range_labeler_help
+
 bin_bbox_path = 'bin/labels'
 bin_images_path = 'bin/images'
 
@@ -260,6 +262,7 @@ def delete_selected_bbox():
 # mouse callback function
 def mouse_listener(event, x, y, flags, param):
     global is_bbox_selected, prev_was_double_click, mouse_x, mouse_y, point_1, point_2
+    global range_labeler
 
     if event == cv2.EVENT_MOUSEMOVE:
         mouse_x = x
@@ -398,6 +401,7 @@ cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_KEEPRATIO)
 cv2.resizeWindow(WINDOW_NAME, 500, 500)
 cv2.setMouseCallback(WINDOW_NAME, mouse_listener)
 
+range_labeler = RangeLabeler(with_qt=WITH_QT)
 # selected image
 TRACKBAR_IMG = 'Image'
 cv2.createTrackbar(TRACKBAR_IMG, WINDOW_NAME, 0, last_img_index, change_img_index)
@@ -466,10 +470,14 @@ while True:
                                                                                                "\nPress [W] or [S] to change.",
                                    120)
 
+    # Рисуем статус промежуточной разметки поверх изображения
+    tmp_img = range_labeler.draw_status(tmp_img)
+    
     cv2.imshow(WINDOW_NAME, tmp_img)
     pressed_key = cv2.waitKey(50)
-
+    
     """ Key Listeners START """
+
     if pressed_key == ord('a') or pressed_key == ord('d'):
         # show previous image key listener
         if pressed_key == ord('a'):
@@ -499,6 +507,48 @@ while True:
             track_index = increase_index(track_index, last_track_index)
         cv2.setTrackbarPos(TRACKBAR_TRACK, WINDOW_NAME, track_index)
 
+  # ========== ПРОМЕЖУТОЧНАЯ РАЗМЕТКА ==========
+    # [Space] - Сохранить текущий прямоугольник как шаблон
+    elif pressed_key == ord(' '):
+        if is_bbox_selected and selected_bbox != -1:
+            obj = img_objects[selected_bbox]
+            class_idx, x1, y1, x2, y2 = obj
+            bbox_data = (x1, y1, x2, y2)
+            range_labeler.save_template(bbox_data, class_idx, track_index)
+            # Не сбрасываем выделение, чтобы пользователь видел, что сохранилось
+        else:
+            range_labeler._show_message("[WARN] Double-click on a rectangle first!")
+    
+    # [f] - Установить первый кадр диапазона
+    elif pressed_key == ord('f'):
+        range_labeler.set_first_frame(img_index)
+    
+    # [g] - Установить последний кадр диапазона
+    elif pressed_key == ord('g'):
+        range_labeler.set_last_frame(img_index)
+    
+    # [R] - Применить шаблон к диапазону
+    elif pressed_key == ord('b'):
+        # Проверяем, что диапазон не слишком большой
+        if range_labeler.selection_start != -1 and range_labeler.selection_end != -1:
+            total = abs(range_labeler.selection_end - range_labeler.selection_start) + 1
+            if total > 100:
+                range_labeler._show_message(f"[WARN] {total} frames selected. This may take a moment...")
+                cv2.waitKey(1)  # Даем время на обновление интерфейса
+        
+        range_labeler.apply_to_range(
+            range_labeler.selection_start,
+            range_labeler.selection_end,
+            image_list,
+            get_txt_path,
+            save_bb
+        )
+    
+    # [c] - Сбросить все настройки
+    elif pressed_key == ord('c'):
+        range_labeler.reset()
+    # ============================================
+
     # REMOVING BAD DATA
     elif pressed_key == ord('r'):
 
@@ -526,10 +576,8 @@ while True:
 
         cv2.setTrackbarPos(TRACKBAR_IMG, WINDOW_NAME, img_index)
 
-
     # Num class-switchin'
     elif pressed_key == ord('1'):
-
         if len(class_list) >= 1:
             class_index = 0
             color = class_rgb[class_index].tolist()
@@ -537,7 +585,6 @@ while True:
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
 
     elif pressed_key == ord('2'):
-
         if len(class_list) >= 2:
             class_index = 1
             color = class_rgb[class_index].tolist()
@@ -545,7 +592,6 @@ while True:
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
 
     elif pressed_key == ord('3'):
-
         if len(class_list) >= 3:
             class_index = 2
             color = class_rgb[class_index].tolist()
@@ -594,8 +640,6 @@ while True:
             draw_line(tmp_img, mouse_x, mouse_y, height, width, color)
             cv2.setTrackbarPos(TRACKBAR_CLASS, WINDOW_NAME, class_index)
 
-
-
     # help key listener
     elif pressed_key == ord('h'):
         if WITH_QT:
@@ -604,13 +648,16 @@ while True:
                                             "[a] or [d] to change Image;\n"
                                             "[w] or [s] to change Class.\n"
                                             "[W] or [S] to change Track id.\n"
+                                            "\n" + create_range_labeler_help() + "\n"
                                             "%s" % img_path, 6000)
         else:
             print("[e] to show edges;\n"
                   "[q] to quit;\n"
                   "[a] or [d] to change Image;\n"
                   "[w] or [s] to change Class.\n"
+                  "\n" + create_range_labeler_help() + "\n"
                   "%s" % img_path)
+                  
     # show edges key listener
     elif pressed_key == ord('e'):
         if edges_on == True:
