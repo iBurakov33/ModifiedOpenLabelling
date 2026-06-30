@@ -648,6 +648,11 @@ while True:
                                             "[a] or [d] to change Image;\n"
                                             "[w] or [s] to change Class.\n"
                                             "[W] or [S] to change Track id.\n"
+                                            "[Space] - Save current rectangle as template"
+                                            "[f]     - Set first frame of range\n"
+                                            "[g]     - Set last frame of range\n"
+                                            "[b]     - Apply template to range\n"
+                                            "[c]     - Reset all settings\n"
                                             "\n" + create_range_labeler_help() + "\n"
                                             "%s" % img_path, 6000)
         else:
@@ -655,6 +660,12 @@ while True:
                   "[q] to quit;\n"
                   "[a] or [d] to change Image;\n"
                   "[w] or [s] to change Class.\n"
+                  "[W] or [S] to change Track id.\n"
+                  "[Space] - Save current rectangle as template"
+                  "[f]     - Set first frame of range\n"
+                  "[g]     - Set last frame of range\n"
+                  "[b]     - Apply template to range\n"
+                  "[c]     - Reset all settings\n"
                   "\n" + create_range_labeler_help() + "\n"
                   "%s" % img_path)
                   
