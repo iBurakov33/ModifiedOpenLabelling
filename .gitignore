@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vs/
+.idea/
+.vscode/
+
+# Project specific
+images/
+labels/
+bin/
+temp/
+bad_images/
+bad_labels/
+*.jpg
+*.jpeg
+*.png
+*.txt
+
+# OS
+.DS_Store
+Thumbs.db
