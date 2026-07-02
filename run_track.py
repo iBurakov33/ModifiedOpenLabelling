@@ -52,6 +52,7 @@ mouse_y = 0
 point_1 = (-1, -1)
 point_2 = (-1, -1)
 
+delete_threshold_value = 0.0
 
 def change_img_index(x):
     global img_index, img
@@ -414,6 +415,7 @@ if last_class_index != 0:
 TRACKBAR_TRACK = 'Track id'
 cv2.createTrackbar(TRACKBAR_TRACK, WINDOW_NAME, 0, last_track_index, change_track_index)
 
+
 # initialize
 change_img_index(0)
 edges_on = False
@@ -544,6 +546,25 @@ while True:
             save_bb
         )
     
+    # [z] - Удалить шаблон из диапазона
+    elif pressed_key == ord('z'):
+        range_labeler.delete_template_from_range(
+            range_labeler.selection_start,
+            range_labeler.selection_end,
+            image_list,
+            get_txt_path,
+            delete_bb,
+            threshold=delete_threshold_value
+        )
+
+    elif pressed_key == ord('='):  # Увеличить порог
+        delete_threshold_value = min(delete_threshold_value + 0.05, 1.0)
+        print(f"Threshold: {delete_threshold_value}")
+        
+    elif pressed_key == ord('-'):  # Уменьшить порог
+        delete_threshold_value = max(delete_threshold_value - 0.05, 0.0)
+        print(f"Threshold: {delete_threshold_value}")
+
     # [c] - Сбросить все настройки
     elif pressed_key == ord('c'):
         range_labeler.reset()
