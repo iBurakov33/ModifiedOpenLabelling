@@ -12,6 +12,7 @@ Hotkeys:
 
 import cv2
 import numpy as np
+import os
 
 
 class RangeLabeler:
@@ -25,6 +26,7 @@ class RangeLabeler:
         self.is_active = False
         self.status_color = (0, 255, 255)
         self.bg_color = (0, 0, 0)
+
         
     def save_template(self, bbox_data, class_idx, track_idx=0):
         self.template_bbox = bbox_data
@@ -144,7 +146,109 @@ class RangeLabeler:
         else:
             print(f"[RangeLabeler] {message}")
 
+    def delete_template_from_range(self, start_idx, end_idx, image_list, get_txt_path_func, delete_bb_func, threshold=0.0):
+        """
+        Удаляет из диапазона все прямоугольники, совпадающие с шаблоном.
+        
+        Args:
+            start_idx: int - начальный кадр
+            end_idx: int - конечный кадр
+            image_list: list - список изображений
+            get_txt_path_func: function - получить путь к .txt
+            delete_bb_func: function - удалить bounding box
+            threshold: float - порог совпадения (0.1 = 10%)
+        """
+        if not self.is_active or self.template_bbox is None:
+            self._show_message("[WARN] No template saved! Save template with Space first!")
+            return False
+            
+        if start_idx == -1 or end_idx == -1:
+            self._show_message("[WARN] Set first (f) and last (g) frame first!")
+            return False
+            
+        start = min(start_idx, end_idx)
+        end = max(start_idx, end_idx)
+        
 
+        template_class = self.template_class
+        tx1, ty1, tx2, ty2 = self.template_bbox
+        tw = abs(tx2 - tx1)
+        th = abs(ty2 - ty1)
+        
+        deleted_count = 0
+        total_frames = end - start + 1
+        
+        for i in range(start, end + 1):
+            img_path = image_list[i]
+            txt_path = get_txt_path_func(img_path)
+            
+            if not os.path.exists(txt_path):
+                continue
+                
+            with open(txt_path, 'r') as f:
+                lines = f.readlines()
+            
+            new_lines = []
+            for line in lines:
+                values = line.strip().split()
+                if len(values) < 5:
+                    new_lines.append(line)
+                    continue
+                    
+                # Парсим строку (YOLO формат: class track_id x_center y_center width height)
+                class_idx = int(float(values[0]))
+                
+                # Если класс не совпадает - сохраняем
+                if class_idx != template_class:
+                    new_lines.append(line)
+                    continue
+                    
+                # Проверяем координаты (для YOLO формата)
+                x_center = float(values[2])
+                y_center = float(values[3])
+                bbox_width = float(values[4])
+                bbox_height = float(values[5])
+                
+                # Получаем размеры изображения
+                img = cv2.imread(img_path)
+                if img is None:
+                    new_lines.append(line)
+                    continue
+                height, width = img.shape[:2]
+                
+                x1 = int((x_center - bbox_width/2) * width)
+                y1 = int((y_center - bbox_height/2) * height)
+                x2 = int((x_center + bbox_width/2) * width)
+                y2 = int((y_center + bbox_height/2) * height)
+                
+                # Проверяем совпадение с шаблоном (по положению)
+                # Вычисляем IoU (Intersection over Union) или просто разницу
+                # Здесь просто проверяем, что координаты близки
+                diff_x = abs(x1 - tx1) / max(width, 1)
+                diff_y = abs(y1 - ty1) / max(height, 1)
+                diff_w = abs((x2 - x1) - tw) / max(tw, 1)
+                diff_h = abs((y2 - y1) - th) / max(th, 1)
+                
+                print (f"[debug]{diff_x}\t{diff_h}\t {diff_w}\t {diff_y}")
+                # Если все отклонения меньше порога - удаляем
+                if threshold == 1.0 or (diff_x <= threshold and diff_y <= threshold and diff_w <= threshold and diff_h <= threshold):
+                    deleted_count += 1
+                    print(f"[DEBUG] Deleted bbox in frame {i}: class {class_idx}")
+                    continue  
+                else:
+                    new_lines.append(line)
+            
+            with open(txt_path, 'w') as f:
+                f.writelines(new_lines)
+            
+            # Показываем прогресс
+            if i % 10 == 0 or i == end:
+                progress = ((i - start + 1) / total_frames) * 100
+                self._show_message(f"[PROGRESS] {i - start + 1}/{total_frames} ({progress:.0f}%)")
+        
+        self._show_message(f"[OK] Deleted {deleted_count} matching bboxes from {total_frames} frames")
+        return True
+    
 def create_range_labeler_help():
     return """
     === RANGE LABELING ===
@@ -152,5 +256,8 @@ def create_range_labeler_help():
     [f]     Set first frame of range
     [g]     Set last frame of range
     [b]     Apply template to range
+    [z]     Delete template to range
+    [+]     Increase threshold"
+    [-]     Decrease threshold"
     [c]     Reset all settings
     """
