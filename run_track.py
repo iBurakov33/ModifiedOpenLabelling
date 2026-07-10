@@ -262,6 +262,7 @@ def delete_selected_bbox():
 
 # mouse callback function
 def mouse_listener(event, x, y, flags, param):
+    global img_index
     global is_bbox_selected, prev_was_double_click, mouse_x, mouse_y, point_1, point_2
     global range_labeler
 
@@ -274,6 +275,13 @@ def mouse_listener(event, x, y, flags, param):
         point_1 = (-1, -1)
         # if clicked inside a bounding box
         set_selected_bbox()
+        if is_bbox_selected and selected_bbox != -1:
+            obj = img_objects[selected_bbox]
+            class_idx, x1, y1, x2, y2 = obj
+            bbox_data = (x1, y1, x2, y2)
+            range_labeler.save_template(bbox_data, class_idx, track_index)
+            # Не сбрасываем выделение, чтобы пользователь видел, что сохранилось
+        range_labeler.set_first_frame(img_index)
     # AlexeyGy change: delete via right-click
     elif event == cv2.EVENT_RBUTTONDOWN:
         set_selected_bbox()
@@ -511,26 +519,28 @@ while True:
 
   # ========== ПРОМЕЖУТОЧНАЯ РАЗМЕТКА ==========
     # [Space] - Сохранить текущий прямоугольник как шаблон
-    elif pressed_key == ord(' '):
-        if is_bbox_selected and selected_bbox != -1:
-            obj = img_objects[selected_bbox]
-            class_idx, x1, y1, x2, y2 = obj
-            bbox_data = (x1, y1, x2, y2)
-            range_labeler.save_template(bbox_data, class_idx, track_index)
-            # Не сбрасываем выделение, чтобы пользователь видел, что сохранилось
-        else:
-            range_labeler._show_message("[WARN] Double-click on a rectangle first!")
+    #elif pressed_key == ord(' '):
+    #    range_labeler.set_first_frame(img_index)
+    #    if is_bbox_selected and selected_bbox != -1:
+    #        obj = img_objects[selected_bbox]
+    #        class_idx, x1, y1, x2, y2 = obj
+    #        bbox_data = (x1, y1, x2, y2)
+    #        range_labeler.save_template(bbox_data, class_idx, track_index)
+    #        # Не сбрасываем выделение, чтобы пользователь видел, что сохранилось
+    #    else:
+    #        range_labeler._show_message("[WARN] Double-click on a rectangle first!")
     
     # [f] - Установить первый кадр диапазона
-    elif pressed_key == ord('f'):
-        range_labeler.set_first_frame(img_index)
+    #elif pressed_key == ord('f'):
+    #    range_labeler.set_first_frame(img_index)
     
     # [g] - Установить последний кадр диапазона
-    elif pressed_key == ord('g'):
-        range_labeler.set_last_frame(img_index)
+    #elif pressed_key == ord('g'):
+    #    range_labeler.set_last_frame(img_index)
     
     # [R] - Применить шаблон к диапазону
     elif pressed_key == ord('b'):
+        range_labeler.set_last_frame(img_index)
         # Проверяем, что диапазон не слишком большой
         if range_labeler.selection_start != -1 and range_labeler.selection_end != -1:
             total = abs(range_labeler.selection_end - range_labeler.selection_start) + 1
@@ -545,6 +555,9 @@ while True:
             get_txt_path,
             save_bb
         )
+
+        track_index = increase_index(track_index, last_track_index)
+        cv2.setTrackbarPos(TRACKBAR_TRACK, WINDOW_NAME, track_index)
     
     # [z] - Удалить шаблон из диапазона
     elif pressed_key == ord('z'):

@@ -39,7 +39,7 @@ class RangeLabeler:
         if not self.is_active or self.template_bbox is None:
             self._show_message("[WARN] First save template (Space)!")
             return False
-        self.selection_start = frame_idx
+        self.selection_start = frame_idx + 1
         self._show_message(f"[FIRST] First frame: {frame_idx}")
         return True
         
@@ -57,6 +57,7 @@ class RangeLabeler:
             return False
             
         if start_idx == -1 or end_idx == -1:
+            print(f"{start_idx} {end_idx}")
             self._show_message("[WARN] Set first (f) and last (g) frame!")
             return False
             
